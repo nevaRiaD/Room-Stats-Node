@@ -1,9 +1,12 @@
 # Room-Stats-Node
 
-Device that measures temperature, humidity, pressure, and VOC gas using BME680 Sensor
-Communicates information to STM32 via SPI and then communicates to ESP32 via UART so that ESP32 can communicate wireless via Wifi
+This project uses a BME680 environmental sensor to measure temperature, humidity, atmospheric pressure, and VOC gas levels. The system architecture includes an STM32 microcontroller for data acquisition and processing, and an ESP32 module for wireless communication over Wi-Fi.
 
-MAIN Board: STM32F446RE MCU NUCLEO-F446RE
-OTA Board: ESP-WROOM-32
+MAIN Board: STM32F446RE (NUCLEO-F446RE)
+Wireless Communication Board: ESP-WROOM-32
 Sensor: BME680 Digital Temperature Humidity Sensor Module
 Display: TBD
+Interfaces:
+- Sensor to STM32: SPI
+- STM32 to ESP32: UART
+- ESP32 to Wi-Fi: Wireless Communication
