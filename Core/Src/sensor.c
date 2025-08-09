@@ -7,3 +7,5 @@
 
 
 #include "sensor.h"
+
+// Abstraction code
