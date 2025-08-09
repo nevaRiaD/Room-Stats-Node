@@ -12,3 +12,7 @@ Interfaces:
 - Sensor to STM32: SPI
 - STM32 to ESP32: UART
 - ESP32 to Wi-Fi: Wireless Communication
+
+Drivers:
+- Hal Drivers
+- BME68x_SensorAPI (boschsensors) for BME680
