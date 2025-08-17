@@ -21,7 +21,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "bme68x.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -45,7 +45,14 @@ SPI_HandleTypeDef hspi1;
 UART_HandleTypeDef huart2;
 
 /* USER CODE BEGIN PV */
+typedef struct {
+	SPI_HandleTyxpeDef *hspi;
+	GPIO_TypeDef *cs_port;
+	uint16_t cs_pin;
+} bme68x_spi_ctx_t;
 
+struct bme68x_dev bme_dev;
+bme68x_spi_ctx_t bme_ctx;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -59,7 +66,37 @@ static void MX_SPI1_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+static void cs_low(bme68x_spi_ctx_t *ctx) {
+	HAL_GPIO_WritePin(ctx->cs_port, ctx->cs_pin, GPIO_PIN_RESET);
+}
 
+static void cs_high(bme68x_spi_ctx_t *ctx) {
+	HAL_GPIO_WritePin(ctx->cs_port, ctx->cs_pin, GPIO_PIN_SET);
+}
+
+static int8_t spi_read(uint8_t reg, uint8_t *data, uint32_t len, void *intf_ptr) {
+	bme68x_spi_ctx_t *ctx = (bme68x_spi_ctx_t*)intf_ptr;
+	cs_low(ctx);
+	if (HAL_SPI_Transmit(ctx->hspi, &reg, 1, HAL_MAX_DELAY) != HAL_OK) { cs_high(ctx); return -1; } // send reg addr
+	if (HAL_SPI_Receive(ctx->hspi, data, len, HAL_MAX_DELAY) != HAL_OK) { cs_high(ctx); return -1; } // read payload
+	cs_high(ctx);
+	return 0;
+}
+
+static int8_t spi_write(uint8_t reg, const uint8_t *data, uint32_t len, void *intf_ptr) {
+	bme68x_spi_ctx_t *ctx = (bme68x_spi_ctx_t*)intf_ptr;
+	cs_low(ctx);
+	if (HAL_SPI_Transmit(ctx->hspi, &reg, 1, HAL_MAX_DELAY) != HAL_OK) { cs_high(ctx); return -1; } // send reg addr
+	if (HAL_SPI_Transmit(ctx->hspi, (uint8_t*)data, len, HAL_MAX_DELAY) != HAL_OK) { cs_high(ctx); return -1; } // send payload
+	cs_high(ctx);
+	return 0;
+}
+
+static void delay_us(uint32_t us, void *intf_ptr) {
+	uint32_t start = DWT->CYCCNT;
+	uint32_t ticks = (HAL_RCC_GetHCLKFreq()/1000000) * us;
+	while ((DWT->CYCCNT - start) < ticks);
+}
 /* USER CODE END 0 */
 
 /**
@@ -94,7 +131,20 @@ int main(void)
   MX_USART2_UART_Init();
   MX_SPI1_Init();
   /* USER CODE BEGIN 2 */
+  bme_ctx.hspi = &hspi1;
+  bme_ctx.cs_port = BME680_CS_GPIO_Port; // from main.h
+  bme_ctx.cs_pin = BME_CS_Pin; // from main.h
 
+  bme_dev.intf = BMEX_SPI_INTF;
+  bme_dev.intf_ptr = &bme_ctx;
+  bme_dev.read = spi_read;
+  bme_dev.write = spi_write;
+  bme_dev.delay_us = delay_us;
+  bme_dev.amb_temp = 25;
+
+  if (bme68xinit(&bme_dev) != BME68X_OK) {
+	  Error_Handler();
+  }
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -104,6 +154,13 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+	struct bme68x_conf conf;
+	struct bme68x_heatr_conf hconf;
+	struct bme68x_data data;
+	uint8_t n_fields;
+
+	conf.os_hum = BME68X_OS_2X;
+	conf.
   }
   /* USER CODE END 3 */
 }
