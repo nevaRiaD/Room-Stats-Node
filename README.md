@@ -1,6 +1,6 @@
 # Room-Stats-Node
 
-This project uses a BME680 environmental sensor to measure temperature, humidity, atmospheric pressure, and VOC gas levels. The system architecture includes an STM32 microcontroller for data acquisition and processing, and an ESP32 module for wireless communication over Wi-Fi.
+BME680 environmental sensor to measure temperature, humidity, atmospheric pressure, and VOC gas levels. The system architecture includes an STM32 microcontroller for data acquisition and processing, and an ESP32 module for wireless communication over Wi-Fi.
 
 Hardware Components:
 - MAIN Board: STM32F446RE (NUCLEO-F446RE)
