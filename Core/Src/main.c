@@ -160,7 +160,11 @@ int main(void)
 	uint8_t n_fields;
 
 	conf.os_hum = BME68X_OS_2X;
-	conf.
+	conf.os_temp = BME68X_OS_8X;
+	conf.os_pres = BME68X_OS_4X;
+	conf.filter = BME68X_FILTER_SIZE_3;
+	conf.odr = BME68X_ODR_NONE;
+	bme68x_set_conf(&conf, &bme_dev);
   }
   /* USER CODE END 3 */
 }
