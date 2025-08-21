@@ -21,6 +21,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include <string.h>
 #include "bme68x.h"
 /* USER CODE END Includes */
 
@@ -145,6 +146,24 @@ int main(void)
   if (bme68xinit(&bme_dev) != BME68X_OK) {
 	  Error_Handler();
   }
+
+  struct bme68x_conf conf = {
+	.os_hum = BME68X_OS_16X,
+	.os_temp = BME68X_OS_2X,
+	.os_pres = BME68X_OS_1X,
+	.filter = BME68X_FILTER_SIZE_3,
+	.odr = BME68X_ODR_NONE
+  };
+  bme68x_set_conf(&conf, &bme_dev);
+
+  struct bme68x_heatr_conf hconf = {
+	.enable = BME68X_ENABLE,
+	.heatr_temp = 300, // °C
+	.heatr_dur = 100 // ms
+  };
+  bme68x_set_heatr_conf(BME68X_FORCED_MODE, &hconf, &bme_dev);
+
+  printf("Sample, TimeStamp(ms), Temperature(deg C), Pressure(Pa), Humidity(%%), Gas resistance(ohm), Status\n");
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -154,24 +173,31 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-	struct bme68x_conf conf;
-	struct bme68x_heatr_conf hconf;
+	uint8_t n_fields = 0;
 	struct bme68x_data data;
-	uint8_t n_fields;
+	bme68x_set_op_mode(BME68X_FORCED_MODE, &bme_dev);
 
-	conf.os_hum = BME68X_OS_2X;
-	conf.os_temp = BME68X_OS_8X;
-	conf.os_pres = BME68X_OS_4X;
-	conf.filter = BME68X_FILTER_SIZE_3;
-	conf.odr = BME68X_ODR_NONE;
-	bme68x_set_conf(&conf, &bme_dev);
+	/* Calculate delay period in microseconds (us) */
+	uint32_t del_us = bme68x_get_meas_dur(BME68X_FORCED_MODE, &conf, &bme_dev) + (uint32_t)(hconf.heatr_dur * 1000);
+	bme_dev.delay_us(del_us, bme_dev.intf_ptr);
 
-	hconf.enable = BME68X_ENABLE;
-	hconf.heatr_temp = 320; // °C
-	hconf.heatr_dur = 150; // ms
-	bme68x_set_heatr_conf(BME68X_FORCED_MODE, &hconf, &bme_dev);
+	if (bme68x_get_data(BME68X_FORCED_MODE, &data, &n_fields, &bme_dev) == BME68X_OK && n_fields) {
+		char msg[128];
 
+		snprintf(msg, sizeof(msg),
+				"T=%d.%02d C, P=%lu Pa, H=%lu.%03lu %%, Gas=%lu Ohm, St=0x%02X\r\n",
+				data.temperature / 100, data.temperature % 100,
+				(unsigned long)data.pressure,
+				(unsigned long)(data.humidity / 1000),
+				(unsigned long)(data.humidity % 1000),
+				(unsigned long)data.gas_resistance,
+				(unsigned)data.status
+		);
 
+		HAL_UART_Transmit(&huart2, (uint8_t*)msg, strlen(msg), HAL_MAX_DELAY);
+	}
+
+	HAL_Delay(1000); // Delay 1 s
   }
   /* USER CODE END 3 */
 }
@@ -313,10 +339,7 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
-
-  /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(BME680_CS_GPIO_Port, BME680_CS_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOC, LD2_Pin|BME680_CS_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin : B1_Pin */
   GPIO_InitStruct.Pin = B1_Pin;
@@ -324,19 +347,12 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(B1_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : LD2_Pin */
-  GPIO_InitStruct.Pin = LD2_Pin;
+  /*Configure GPIO pins : LD2_Pin BME680_CS_Pin */
+  GPIO_InitStruct.Pin = LD2_Pin|BME680_CS_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(LD2_GPIO_Port, &GPIO_InitStruct);
-
-  /*Configure GPIO pin : BME680_CS_Pin */
-  GPIO_InitStruct.Pin = BME680_CS_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(BME680_CS_GPIO_Port, &GPIO_InitStruct);
+  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
   /* USER CODE BEGIN MX_GPIO_Init_2 */
 

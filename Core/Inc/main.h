@@ -66,7 +66,7 @@ void Error_Handler(void);
 #define USART_RX_Pin GPIO_PIN_3
 #define USART_RX_GPIO_Port GPIOA
 #define BME680_CS_Pin GPIO_PIN_4
-#define BME680_CS_GPIO_Port GPIOA
+#define BME680_CS_GPIO_Port GPIOC
 #define TMS_Pin GPIO_PIN_13
 #define TMS_GPIO_Port GPIOA
 #define TCK_Pin GPIO_PIN_14
