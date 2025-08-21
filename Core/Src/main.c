@@ -165,6 +165,13 @@ int main(void)
 	conf.filter = BME68X_FILTER_SIZE_3;
 	conf.odr = BME68X_ODR_NONE;
 	bme68x_set_conf(&conf, &bme_dev);
+
+	hconf.enable = BME68X_ENABLE;
+	hconf.heatr_temp = 320; // °C
+	hconf.heatr_dur = 150; // ms
+	bme68x_set_heatr_conf(BME68X_FORCED_MODE, &hconf, &bme_dev);
+
+
   }
   /* USER CODE END 3 */
 }
